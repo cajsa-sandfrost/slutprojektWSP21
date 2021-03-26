@@ -2,6 +2,7 @@ require 'sinatra'
 require 'slim'
 require 'sqlite3'
 require 'bcrypt'
+require 'byebug'
 
 enable :sessions
 
@@ -13,12 +14,13 @@ post('/') do
   username = params[:username]
   password = params[:password]
   password_confirm = params[:password_confirm]
-  zodiacid = params[:zodiac]
+
   if (password == password_confirm) 
     password_digest = BCrypt::Password.create(password)
     db = SQLite3::Database.new('db/db.db')
-    db.execute('INSERT INTO users (username,pwdigest,zodiacid) VALUES (?,?,?)',username, password_digest,zodiacid)
+    db.execute("INSERT INTO users (username,pwdigest) VALUES (?,?)",username,password_digest)
     redirect('/chat')
+
   else 
      "lösenorden matchade inte"
   end
@@ -29,10 +31,14 @@ get('/hem') do
 end 
 
 post('/hem') do
-  zodiactext = params[:zodiactext]
+  id = session[:id]
+  zodiacid = params[:zodiac]
   db = SQLite3::Database.new('db/db.db')
-  db.execute('INSERT INTO users (zodiacid) VALUES (?)',zodiacid)
+  db.execute("UPDATE users SET zodiacid = #{zodiac}")
+  p ditt stjärntecken är #{zodic}
 end 
+
+#UPDATE Users SET weight = 160, desiredWeight = 45 where id = 1;
 
 get('/chat') do 
   slim(:chat)
@@ -50,9 +56,11 @@ post('/login') do
   if BCrypt::Password.new(pwdigest) == password
     session[:id] = id 
     redirect('/hem')
+    slim(:"/hem", locals:{users: result})
   else 
     "FEL LÖSENORD!"
   end 
+  
 end
 
 get('/login') do
@@ -66,22 +74,24 @@ get('/astro') do
 end 
 
 post('/astro') do 
+  id = session[:id]
   content = params[:content]
   db = SQLite3::Database.new('db/db.db')
-  db.results_as_hash = true
-  result = db.execute("SELECT * FROM post WHERE content = ?", content).first
-  id = result["postid"]
-  db = execute('INSERT INTO post (content) VALUES (?)',content)
+  db.execute("INSERT INTO post (content, userid) VALUES (?,id)",content, userid)
+  name = db.execute("SELECT username FROM users WHERE userid = id", username).first
+  h2 #{name}
+  p #{content} 
 end 
 
+
 post('/chat') do
-   
+  id = session[:id]
   content = params[:content]
   db = SQLite3::Database.new('db/db.db')
-  db.results_as_hash = true
-  result = db.execute("SELECT * FROM post WHERE content = ?", content).first
-  id = result["postid"]
-  db = execute('INSERT INTO post (content) VALUES (?)',content)
+  db.execute("INSERT INTO post (content, userid) VALUES (?,id)",content, userid)
+  name = db.execute("SELECT username FROM users WHERE userid = id", username).first
+  h2 #{name}
+  p #{content} 
 end 
 
 #post('/login') do
