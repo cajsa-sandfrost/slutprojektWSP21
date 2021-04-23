@@ -31,14 +31,19 @@ get('/hem') do
 end 
 
 post('/hem') do
-  id = session[:id]
-  zodiacid = params[:zodiac]
+  id = session[:id].to_i
+  zodiacid = params[:zodiac].to_i
+  p "id is #{id} and zodiacid is #{zodiacid}."
   db = SQLite3::Database.new('db/db.db')
-  db.execute("UPDATE users SET zodiacid = #{zodiac}")
-  p ditt stjärntecken är #{zodic}
+  db.execute("UPDATE users SET zodiacid = ? WHERE id = ?",zodiacid,id)
+  db.results_as_hash = true
+  result = db.execute("SELECT zodiactext FROM zodiac_sign WHERE zodiacid = ?", zodiacid)
+  zodiactext = result
+  redirect('/chat')
+  p "ditt stjärntecken är #{zodiactext}"
 end 
 
-#UPDATE Users SET weight = 160, desiredWeight = 45 where id = 1;
+#UPDATE Users SET weight = 160, desiredWeight = 45 where id = 
 
 get('/chat') do 
   slim(:chat)
@@ -56,7 +61,6 @@ post('/login') do
   if BCrypt::Password.new(pwdigest) == password
     session[:id] = id 
     redirect('/hem')
-    slim(:"/hem", locals:{users: result})
   else 
     "FEL LÖSENORD!"
   end 
@@ -74,24 +78,26 @@ get('/astro') do
 end 
 
 post('/astro') do 
-  id = session[:id]
+  id = session[:id].to_i
   content = params[:content]
   db = SQLite3::Database.new('db/db.db')
-  db.execute("INSERT INTO post (content, userid) VALUES (?,id)",content, userid)
-  name = db.execute("SELECT username FROM users WHERE userid = id", username).first
-  h2 #{name}
-  p #{content} 
+  db.execute("INSERT INTO post (content,userid) VALUES (?,?)",content, id)
+  redirect('/astrov')
 end 
 
+get('/astrov') do
+  content = db.execute("SELECT content FROM post WHERE userid = ?", userid)
+  name = db.execute("SELECT username FROM users WHERE id = ?", id)
+  slim(:astrov,locals:{name:name,content:content})
+end 
 
 post('/chat') do
-  id = session[:id]
+  id = session[:id].to_i
   content = params[:content]
   db = SQLite3::Database.new('db/db.db')
-  db.execute("INSERT INTO post (content, userid) VALUES (?,id)",content, userid)
-  name = db.execute("SELECT username FROM users WHERE userid = id", username).first
-  h2 #{name}
-  p #{content} 
+  db.execute("INSERT INTO post (content,userid) VALUES (?,?)",content, id)
+  p "#{name}"
+  p "#{content}"
 end 
 
 #post('/login') do
